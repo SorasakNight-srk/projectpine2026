@@ -16,12 +16,13 @@ type CourseRow = {
   tag: string;
   name: string;
   note: string | null;
+  created_at: string;
 };
 
 export async function fetchCourses(): Promise<Course[]> {
   const { data, error } = await supabase
     .from("courses")
-    .select("id, code, tag, name, note")
+    .select("id, code, tag, name, note, created_at")
     .order("code", { ascending: true });
 
   if (error) throw error;

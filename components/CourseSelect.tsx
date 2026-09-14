@@ -24,16 +24,19 @@ export function CourseSelect({ value, onChange }: CourseSelectProps) {
         .order("code", { ascending: true });
 
       if (!isMounted) return;
+
       if (error) {
         console.error("โหลดรายวิชาไม่สำเร็จ:", error.message);
         setErrorMessage("โหลดรายวิชาไม่สำเร็จ");
       } else {
         setCourses(data ?? []);
       }
+
       setLoading(false);
     }
 
     fetchCourses();
+
     return () => {
       isMounted = false;
     };
@@ -53,12 +56,14 @@ export function CourseSelect({ value, onChange }: CourseSelectProps) {
         <option value="" disabled>
           {loading ? "กำลังโหลดวิชา..." : "เลือกวิชาเรียน"}
         </option>
+
         {courses.map((course) => (
           <option key={course.id} value={course.id}>
             {course.code} · {course.name}
           </option>
         ))}
       </select>
+
       {errorMessage && (
         <p className="mt-1 text-xs text-red-600">{errorMessage}</p>
       )}

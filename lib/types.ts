@@ -1,15 +1,16 @@
 import type { LucideIcon } from "lucide-react";
 
 // Matches the `courses` table in Supabase.
-export type Course = {
-  id: string; // uuid
-  code: string; // e.g. "MA111"
-  tag: string; // e.g. "MA"
-  name: string; // e.g. "Calculus 1"
+export interface Course {
+  id: string;
+  code: string;
+  tag: string;
+  name: string;
   note: string | null;
-  rotate: string; // tailwind rotate class, purely cosmetic
-  accent: string; // hex color, purely cosmetic
-};
+  created_at: string;
+  rotate?: string;
+  accent?: string;
+}
 
 export type Category = "sheet" | "exam";
 
