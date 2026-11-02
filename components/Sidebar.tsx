@@ -1,7 +1,8 @@
 "use client";
 
-import { BookOpen, UploadCloud, HelpCircle, User, PinIcon } from "lucide-react";
-import type { NavItem } from "@/lib/types";
+import { BookOpen, UploadCloud, HelpCircle, PinIcon } from "lucide-react";
+import type { NavItem, UserInfo } from "@/lib/types";
+import { UserMenu } from "./UserMenu";
 
 export const NAV: NavItem[] = [
   { label: "วิชาเรียน", icon: BookOpen, path: "/Subject" },
@@ -9,13 +10,15 @@ export const NAV: NavItem[] = [
   { label: "Q & A", icon: HelpCircle, path: "/Quest" },
 ];
 
-export function Sidebar({
-  active,
-  onSelect,
-}: {
+type Props = {
   active: string;
   onSelect: (label: string) => void;
-}) {
+  user: UserInfo;
+  onLogout: () => void;
+};
+
+
+export function Sidebar({ active, onSelect, user, onLogout }: Props) {
   return (
     <aside
       className="flex w-64 flex-shrink-0 flex-col justify-between p-5"
@@ -63,16 +66,7 @@ export function Sidebar({
         </nav>
       </div>
 
-      {/* Login */}
-      <button
-        className="flex items-center gap-3 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors hover:bg-white/5"
-        style={{ borderColor: "#3F6248", color: "#F1EBD8" }}
-      >
-        <span className="flex h-6 w-6 items-center justify-center rounded-full" style={{ background: "#3A5C42" }}>
-          <User size={13} />
-        </span>
-        เข้าสู่ระบบ
-      </button>
+      <UserMenu user={user} onLogout={onLogout} />
     </aside>
   );
 }

@@ -51,3 +51,10 @@ export interface Question {
   answered_by?: string | null;
 }
 
+export type UserInfo = {
+  name: string;
+  email?: string;
+  studentId?: string;
+  avatarUrl?: string;
+  role?: string;
+};

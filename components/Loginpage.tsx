@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { loginAction, registerAction } from "@/app/auth/actions";
 
 type Mode = "login" | "register";
 
@@ -66,12 +67,14 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         : { name: id.split("@")[0], email: id };
     }
 
-    setLoading(true);
+     setLoading(true);
     try {
-      // TODO: เปลี่ยนเป็นเรียก API จริง เช่น fetch(isRegister ? "/api/auth/register" : "/api/auth/login", ...)
-      // หน้า login: ส่ง identifier ไปให้ server เช็คว่าเป็นอีเมลหรือรหัสนักศึกษา
-      await new Promise((r) => setTimeout(r, 700));
-      onLogin(payload);
+      const res = isRegister
+        ? await registerAction({ name: name.trim(), email, studentId, password })
+        : await loginAction({ identifier: identifier.trim(), password });
+
+      if (!res.ok) return setError(res.error);
+      onLogin(res.user);
     } catch {
       setError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
     } finally {

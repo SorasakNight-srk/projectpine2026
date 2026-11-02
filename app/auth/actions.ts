@@ -1,7 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdmin } from "@supabase/supabase-js";
 
 type Result =
@@ -18,9 +18,7 @@ function admin() {
 }
 
 async function logLogin(userId: string) {
-  const supabase = await createClient();
   const h = await headers();
-  // insert ด้วย service_role เพราะตารางนี้ไม่เปิด policy insert ให้ client
   await admin().from("login_logs").insert({
     user_id: userId,
     ip_address: h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
@@ -109,4 +107,24 @@ export async function loginAction(input: {
 export async function logoutAction() {
   const supabase = await createClient();
   await supabase.auth.signOut();
+}
+
+export async function getCurrentUserAction() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("name, student_id")
+    .eq("id", user.id)
+    .single();
+
+  return {
+    name: profile?.name ?? user.email?.split("@")[0] ?? "ผู้ใช้",
+    email: user.email,
+    studentId: profile?.student_id ?? undefined,
+  };
 }
