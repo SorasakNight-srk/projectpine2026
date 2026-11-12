@@ -90,7 +90,7 @@ export function QAPanel() {
         </button>
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 overflow-y-scroll">
         {isLoading && (
           <p className="text-sm text-gray-400">กำลังโหลดกระทู้...</p>
         )}
