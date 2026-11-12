@@ -1,8 +1,14 @@
 "use client";
 
-import { ChevronLeft, FileText, UploadCloud } from "lucide-react";
+import { ChevronLeft, FileText, Trash2, UploadCloud } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { fetchMaterials, getMaterialUrl, uploadMaterial } from "@/lib/materials";
+import { supabase } from "@/lib/supabaseClient";
+import {
+  deleteMaterial,
+  fetchMaterials,
+  getMaterialUrl,
+  uploadMaterial,
+} from "@/lib/materials";
 import type { Category, Course, Material } from "@/lib/types";
 import { CATEGORY_LABEL } from "@/lib/types";
 
@@ -25,7 +31,14 @@ export function MaterialsList({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // ดึง id ของผู้ใช้ที่ล็อกอินอยู่ เพื่อใช้เช็คว่าเป็นเจ้าของไฟล์หรือไม่
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+  }, []);
 
   function load() {
     setLoading(true);
@@ -66,6 +79,29 @@ export function MaterialsList({
     }
   }
 
+  async function handleDelete(m: Material) {
+    if (
+      !window.confirm(`ลบไฟล์ "${m.file_name}" ใช่ไหม?\nการลบไม่สามารถย้อนกลับได้`)
+    )
+      return;
+    setDeletingId(m.id);
+    setError(null);
+    try {
+      await deleteMaterial(m);
+      setMaterials((prev) => prev.filter((x) => x.id !== m.id));
+    } catch (err: any) {
+      setError(err.message ?? "ลบไฟล์ไม่สำเร็จ");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+useEffect(() => {
+  supabase.auth.getSession().then(({ data, error }) => {
+    console.log("session:", data.session, "error:", error);
+  });
+}, []);
+
+console.log("userId:", userId, "uploaded_by:", materials.map((m) => m.uploaded_by));
   return (
     <main className="flex h-full flex-1 flex-col p-8">
       <button
@@ -145,9 +181,26 @@ export function MaterialsList({
                   {m.file_name}
                 </span>
               </button>
-              <span className="flex-shrink-0 text-xs" style={{ color: "#8C8368" }}>
-                {formatBytes(m.file_size)}
-              </span>
+
+              <div className="flex flex-shrink-0 items-center gap-3">
+                <span className="text-xs" style={{ color: "#8C8368" }}>
+                  {formatBytes(m.file_size)}
+                </span>
+
+                {/* แสดงปุ่มลบเฉพาะเจ้าของไฟล์ */}
+                {userId !== null && m.uploaded_by === userId && (
+                  <button
+                    onClick={() => handleDelete(m)}
+                    disabled={deletingId === m.id}
+                    aria-label={`ลบ ${m.file_name}`}
+                    title="ลบไฟล์"
+                    className="rounded-md p-1.5 transition-opacity hover:opacity-70 disabled:opacity-40"
+                    style={{ color: "#B25B4C" }}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
+              </div>
             </li>
           ))}
         </ul>

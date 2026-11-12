@@ -52,7 +52,7 @@ export function QAPanel() {
   );
 
   return (
-    <main className="flex-1 p-8">
+    <main className="h-screen min-w-0 flex-1 overflow-y-auto p-8">
       <div className="mb-7">
         <h1 className="mt-1 text-2xl font-semibold" style={{ color: "#1F3D2B" }}>
           Q & A
@@ -90,7 +90,7 @@ export function QAPanel() {
         </button>
       </div>
 
-      <div className="flex flex-col gap-3 overflow-y-scroll">
+      <div className="flex min-w-0 flex-col gap-3">
         {isLoading && (
           <p className="text-sm text-gray-400">กำลังโหลดกระทู้...</p>
         )}

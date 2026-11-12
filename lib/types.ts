@@ -23,6 +23,7 @@ export type Material = {
   file_path: string; // path inside the storage bucket
   file_size: number; // bytes
   uploaded_at: string; // ISO timestamp
+  uploaded_by: string | null; // uuid ของคนอัพโหลด (auth.users.id)
 };
 
 export type NavItem = {
