@@ -65,7 +65,7 @@ export function AnswerModal({
     setIsSubmitting(true);
     setErrorMessage("");
 
-    const { error } = await supabase
+    const { error } = await authClient
       .from("answers")
       .insert({
         question_id: question.id,

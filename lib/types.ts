@@ -66,4 +66,6 @@ export interface Answer {
   content: string;
   answered_by: string;
   created_at: string;
+  user_id?: string | null;
+  updated_at?: string | null;
 }

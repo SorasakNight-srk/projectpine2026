@@ -18,7 +18,7 @@ export function QAPanel() {
     const { data, error } = await supabase
       .from("questions")
       .select(
-        "id, course_id, author_name, content, created_at, courses!questions_course_id_fkey(code, name), answers(id, question_id, content, answered_by, created_at)"
+        "id, course_id, author_name, content, created_at, courses!questions_course_id_fkey(code, name), answers(id, question_id, content, answered_by, created_at, user_id, updated_at)"
       )
       .order("created_at", { ascending: false })
       .order("created_at", { referencedTable: "answers", ascending: true });
