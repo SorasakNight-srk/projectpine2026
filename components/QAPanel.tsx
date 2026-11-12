@@ -18,9 +18,10 @@ export function QAPanel() {
     const { data, error } = await supabase
       .from("questions")
       .select(
-        "id, course_id, author_name, content, created_at, answer, answered_at, answered_by, courses!questions_course_id_fkey(code, name)"
+        "id, course_id, author_name, content, created_at, courses!questions_course_id_fkey(code, name), answers(id, question_id, content, answered_by, created_at)"
       )
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .order("created_at", { referencedTable: "answers", ascending: true });
 
     if (error) {
       console.error("โหลดกระทู้ไม่สำเร็จ:", error.message);
@@ -31,13 +32,12 @@ export function QAPanel() {
         author_name: row.author_name,
         content: row.content,
         created_at: row.created_at,
-        answer: row.answer,
-        answered_at: row.answered_at,
-        answered_by: row.answered_by,
+        answers: row.answers ?? [],
         subject_name: row.courses
           ? `${row.courses.code} · ${row.courses.name}`
           : undefined,
       }));
+      console.log("questions + answers:", mapped);
       setQuestions(mapped);
     }
     setIsLoading(false);

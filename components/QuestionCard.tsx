@@ -11,6 +11,7 @@ interface QuestionCardProps {
 
 export function QuestionCard({ question, onUpdated }: QuestionCardProps) {
   const [answerOpen, setAnswerOpen] = useState(false);
+  const answers = question.answers ?? [];
 
   return (
     <div className="rounded-lg border border-gray-100 bg-white p-5 shadow-sm">
@@ -32,28 +33,34 @@ export function QuestionCard({ question, onUpdated }: QuestionCardProps) {
         {new Date(question.created_at).toLocaleString("th-TH")}
       </p>
 
-      {/* แสดงคำตอบถ้ามี */}
-      {question.answer ? (
-        <div
-          className="mt-2 rounded-md border-l-4 bg-gray-50 p-3 text-sm"
-          style={{ borderColor: "#1F3D2B", color: "#1F3D2B" }}
-        >
-          <p className="mb-1 text-xs font-medium opacity-60">
-            {question.answered_by ?? "ผู้ตอบ"}
-            {question.answered_at &&
-              ` · ${new Date(question.answered_at).toLocaleString("th-TH")}`}
-          </p>
-          <p>{question.answer}</p>
+      {/* แสดงคำตอบทั้งหมด */}
+      {answers.length > 0 && (
+        <div className="mb-2 flex flex-col gap-2">
+          <p className="text-xs text-gray-400">{answers.length} คำตอบ</p>
+          {answers.map((a) => (
+            <div
+              key={a.id}
+              className="rounded-md border-l-4 bg-gray-50 p-3 text-sm"
+              style={{ borderColor: "#1F3D2B", color: "#1F3D2B" }}
+            >
+              <p className="mb-1 text-xs font-medium opacity-60">
+                {a.answered_by} ·{" "}
+                {new Date(a.created_at).toLocaleString("th-TH")}
+              </p>
+              <p className="whitespace-pre-wrap">{a.content}</p>
+            </div>
+          ))}
         </div>
-      ) : (
-        <button
-          onClick={() => setAnswerOpen(true)}
-          className="mt-1 rounded-full border px-4 py-1.5 text-xs font-medium transition-colors"
-          style={{ borderColor: "#1F3D2B", color: "#1F3D2B" }}
-        >
-          ตอบคำถาม
-        </button>
       )}
+
+      {/* ปุ่มตอบอยู่ตลอด ไม่หายหลังมีคนตอบแล้ว */}
+      <button
+        onClick={() => setAnswerOpen(true)}
+        className="mt-1 rounded-full border px-4 py-1.5 text-xs font-medium transition-colors"
+        style={{ borderColor: "#1F3D2B", color: "#1F3D2B" }}
+      >
+        {answers.length > 0 ? "เพิ่มคำตอบ" : "ตอบคำถาม"}
+      </button>
 
       <AnswerModal
         open={answerOpen}

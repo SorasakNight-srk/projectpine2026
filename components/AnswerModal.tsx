@@ -1,16 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { User, X } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
+import { createClient } from "../lib/supabase/client";
 import type { Question } from "../lib/types";
+
+const authClient = createClient();
 
 interface AnswerModalProps {
   open: boolean;
   onClose: () => void;
   onAnswered?: () => void;
   question: Question | null;
-  authorName?: string;
+  authorName?: string; // ถ้าส่งมา จะใช้ค่านี้แทนชื่อที่ดึงจาก Auth
 }
 
 export function AnswerModal({
@@ -18,14 +21,43 @@ export function AnswerModal({
   onClose,
   onAnswered,
   question,
-  authorName = "ผู้ใช้งาน",
+  authorName,
 }: AnswerModalProps) {
   const [answer, setAnswer] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [username, setUsername] = useState("ผู้ใช้งาน");
+
+  // ดึงชื่อผู้ใช้ที่ล็อกอินอยู่
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+
+    (async () => {
+      const { data } = await authClient.auth.getUser();
+      const user = data.user;
+      if (!user || cancelled) return;
+
+      const meta = user.user_metadata ?? {};
+      const name =
+        meta.username ??
+        meta.user_name ??
+        meta.full_name ??
+        meta.name ??
+        user.email?.split("@")[0] ??
+        "ผู้ใช้งาน";
+
+      setUsername(name);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   if (!open || !question) return null;
 
+  const displayName = authorName ?? username;
   const canPost = answer.trim() !== "" && !isSubmitting;
 
   const handlePost = async () => {
@@ -34,13 +66,12 @@ export function AnswerModal({
     setErrorMessage("");
 
     const { error } = await supabase
-      .from("questions")
-      .update({
-        answer: answer.trim(),
-        answered_at: new Date().toISOString(),
-        answered_by: authorName,
-      })
-      .eq("id", question.id);
+      .from("answers")
+      .insert({
+        question_id: question.id,
+        content: answer.trim(),
+        answered_by: displayName,
+      });
 
     setIsSubmitting(false);
 
@@ -80,7 +111,7 @@ export function AnswerModal({
             <User className="h-5 w-5" />
           </div>
           <span className="text-sm font-medium" style={{ color: "#1F3D2B" }}>
-            {authorName}
+            {displayName}
           </span>
         </div>
 

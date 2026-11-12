@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { User, X } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
+import { createClient } from "../lib/supabase/client";
 import { CourseSelect } from "./CourseSelect";
+
+const authClient = createClient();
 
 interface PostQuestionModalProps {
   open: boolean;
@@ -16,15 +19,43 @@ export function PostQuestionModal({
   open,
   onClose,
   onPosted,
-  authorName = "ผู้ใช้งาน",
+  authorName,
 }: PostQuestionModalProps) {
   const [courseId, setCourseId] = useState("");
   const [question, setQuestion] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [username, setUsername] = useState("ผู้ใช้งาน");
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+
+    (async () => {
+      const { data } = await authClient.auth.getUser();
+      const user = data.user;
+      if (!user || cancelled) return;
+
+      const meta = user.user_metadata ?? {};
+      const name =
+        meta.username ??
+        meta.user_name ??
+        meta.full_name ??
+        meta.name ??
+        user.email?.split("@")[0] ??
+        "ผู้ใช้งาน";
+
+      setUsername(name);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   if (!open) return null;
 
+  const displayName = authorName ?? username;
   const canPost = courseId !== "" && question.trim() !== "" && !isSubmitting;
 
   const handlePost = async () => {
@@ -34,7 +65,7 @@ export function PostQuestionModal({
 
     const { error } = await supabase.from("questions").insert({
       course_id: courseId,
-      author_name: authorName,
+      author_name: displayName,
       content: question.trim(),
     });
 
@@ -77,7 +108,7 @@ export function PostQuestionModal({
             <User className="h-5 w-5" />
           </div>
           <span className="text-sm font-medium" style={{ color: "#1F3D2B" }}>
-            {authorName}
+            {displayName}
           </span>
         </div>
 

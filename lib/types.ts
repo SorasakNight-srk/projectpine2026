@@ -44,8 +44,9 @@ export interface Question {
   author_name: string;
   content: string;
   created_at: string;
-  // เติมมาจากการ join กับตาราง courses (ไม่ได้เก็บจริงในตาราง questions)
   subject_name?: string;
+  answers?: Answer[]; // 👈 เพิ่ม
+  // ฟิลด์เก่า ไม่ใช้แล้ว
   answer?: string | null;
   answered_at?: string | null;
   answered_by?: string | null;
@@ -58,3 +59,11 @@ export type UserInfo = {
   avatarUrl?: string;
   role?: string;
 };
+
+export interface Answer {
+  id: string;
+  question_id: string;
+  content: string;
+  answered_by: string;
+  created_at: string;
+}
