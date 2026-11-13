@@ -18,12 +18,17 @@ function admin() {
 }
 
 async function logLogin(userId: string) {
-  const h = await headers();
-  await admin().from("login_logs").insert({
-    user_id: userId,
-    ip_address: h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
-    user_agent: h.get("user-agent"),
-  });
+  try {
+    const h = await headers();
+    const { error } = await admin().from("login_logs").insert({
+      user_id: userId,
+      ip_address: h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
+      user_agent: h.get("user-agent"),
+    });
+    if (error) console.error("LOGIN LOG ERROR:", error.message);
+  } catch (e) {
+    console.error("LOGIN LOG THROW:", e);
+  }
 }
 
 export async function registerAction(input: {
@@ -61,47 +66,62 @@ export async function loginAction(input: {
   identifier: string;
   password: string;
 }): Promise<Result> {
-  const supabase = await createClient();
-  let email = input.identifier;
+  try {
+    const supabase = await createClient();
+    let email = input.identifier;
 
-  // ถ้าเป็นตัวเลข 10 หลัก ให้หาอีเมลจาก profiles
-  if (/^\d{10}$/.test(input.identifier)) {
-    const { data } = await admin()
-      .from("profiles")
-      .select("id")
-      .eq("student_id", input.identifier)
-      .maybeSingle();
+    // ถ้าเป็นตัวเลข 10 หลัก ให้หาอีเมลจาก profiles
+    if (/^\d{10}$/.test(input.identifier)) {
+      const { data } = await admin()
+        .from("profiles")
+        .select("id")
+        .eq("student_id", input.identifier)
+        .maybeSingle();
 
-    if (!data) return { ok: false, error: "รหัสนักศึกษาหรือรหัสผ่านไม่ถูกต้อง" };
+      if (!data) return { ok: false, error: "รหัสนักศึกษาหรือรหัสผ่านไม่ถูกต้อง" };
 
-    const { data: u } = await admin().auth.admin.getUserById(data.id);
-    email = u.user?.email ?? "";
+      const { data: u } = await admin().auth.admin.getUserById(data.id);
+      email = u.user?.email ?? "";
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password: input.password,
+    });
+
+    if (error || !data.user)
+      return { ok: false, error: "อีเมล/รหัสนักศึกษาหรือรหัสผ่านไม่ถูกต้อง" };
+
+    await logLogin(data.user.id);
+
+    let profile: { name: string; student_id: string | null } | null = null;
+    try {
+      const { data: p, error: pErr } = await supabase
+        .from("profiles")
+        .select("name, student_id")
+        .eq("id", data.user.id)
+        .maybeSingle();
+      if (pErr) console.error("PROFILE ERROR:", pErr.message);
+      profile = p;
+    } catch (e) {
+      console.error("PROFILE THROW:", e);
+    }
+
+    return {
+      ok: true,
+      user: {
+        name: profile?.name ?? email.split("@")[0],
+        email: data.user.email,
+        studentId: profile?.student_id ?? undefined,
+      },
+    };
+  } catch (e) {
+    console.error("LOGIN THROW:", e);
+    return {
+      ok: false,
+      error: `DEBUG: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
-
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password: input.password,
-  });
-
-  if (error || !data.user)
-    return { ok: false, error: "อีเมล/รหัสนักศึกษาหรือรหัสผ่านไม่ถูกต้อง" };
-
-  await logLogin(data.user.id);
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("name, student_id")
-    .eq("id", data.user.id)
-    .single();
-
-  return {
-    ok: true,
-    user: {
-      name: profile?.name ?? email.split("@")[0],
-      email: data.user.email,
-      studentId: profile?.student_id ?? undefined,
-    },
-  };
 }
 
 export async function logoutAction() {
