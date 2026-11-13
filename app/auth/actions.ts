@@ -128,3 +128,70 @@ export async function getCurrentUserAction() {
     studentId: profile?.student_id ?? undefined,
   };
 }
+
+export async function forgotPasswordAction(
+  identifier: string
+): Promise<{ ok: boolean; error?: string }> {
+  let email = identifier.trim();
+
+  if (/^\d{10}$/.test(email)) {
+    // รหัสนักศึกษา → หาอีเมลจาก profiles
+    const { data } = await admin()
+      .from("profiles")
+      .select("id")
+      .eq("student_id", email)
+      .maybeSingle();
+
+    if (!data) return { ok: true }; // ไม่บอกว่าไม่มีในระบบ
+    const { data: u } = await admin().auth.admin.getUserById(data.id);
+    email = u.user?.email ?? "";
+    if (!email) return { ok: true };
+  } else if (!/^\S+@\S+\.\S+$/.test(email)) {
+    return { ok: false, error: "กรอกอีเมลหรือรหัสนักศึกษา 10 หลักให้ถูกต้อง" };
+  }
+
+  const supabase = await createClient();
+  const h = await headers();
+  const origin =
+    h.get("origin") ?? process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/auth/callback`,
+  });
+
+  if (error) {
+    console.error("RESET EMAIL ERROR:", error.message, error.code);
+    return { ok: false, error: "ส่งอีเมลไม่สำเร็จ กรุณาลองใหม่ภายหลัง" };
+  }
+  return { ok: true };
+}
+
+export async function updatePasswordAction(
+  password: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (password.length < 8)
+    return { ok: false, error: "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user)
+    return { ok: false, error: "ลิงก์หมดอายุหรือไม่ถูกต้อง กรุณาขอลิงก์ใหม่" };
+
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    console.error("UPDATE PASSWORD ERROR:", error.message, error.code);
+    if (error.code === "same_password")
+      return { ok: false, error: "รหัสผ่านใหม่ต้องไม่ซ้ำกับรหัสผ่านเดิม" };
+    if (error.code === "weak_password")
+      return { ok: false, error: "รหัสผ่านง่ายเกินไป กรุณาตั้งให้คาดเดายากขึ้น" };
+    return { ok: false, error: "เปลี่ยนรหัสผ่านไม่สำเร็จ กรุณาลองใหม่" };
+  }
+
+  // ออกจากระบบ เพื่อให้ผู้ใช้ login ด้วยรหัสใหม่
+  await supabase.auth.signOut();
+  return { ok: true };
+}

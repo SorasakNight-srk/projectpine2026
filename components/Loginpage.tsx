@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { loginAction, registerAction } from "@/app/auth/actions";
+import {
+  loginAction,
+  registerAction,
+  forgotPasswordAction,
+} from "@/app/auth/actions";
 
 type Mode = "login" | "register";
 
@@ -34,6 +38,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
 
   const isRegister = mode === "register";
@@ -41,20 +46,19 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   function switchMode(next: Mode) {
     setMode(next);
     setError("");
+    setInfo("");
   }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
-
-    let payload: { name: string; email?: string; studentId?: string };
+    setInfo("");
 
     if (isRegister) {
       if (!name.trim()) return setError("กรุณากรอกชื่อของคุณ");
       if (!EMAIL_RE.test(email)) return setError("รูปแบบอีเมลไม่ถูกต้อง");
       if (!STUDENT_ID_RE.test(studentId)) return setError("รหัสนักศึกษาต้องเป็นตัวเลข 10 หลัก");
       if (password.length < 8) return setError("รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร");
-      payload = { name: name.trim(), email, studentId };
     } else {
       const id = identifier.trim();
       const isNumeric = /^\d+$/.test(id);
@@ -62,12 +66,9 @@ export function LoginPage({ onLogin }: LoginPageProps) {
       if (isNumeric && !STUDENT_ID_RE.test(id)) return setError("รหัสนักศึกษาต้องเป็นตัวเลข 10 หลัก");
       if (!isNumeric && !EMAIL_RE.test(id)) return setError("กรอกอีเมลให้ถูกต้อง หรือรหัสนักศึกษา 10 หลัก");
       if (password.length < 6) return setError("รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร");
-      payload = isNumeric
-        ? { name: id, studentId: id }
-        : { name: id.split("@")[0], email: id };
     }
 
-     setLoading(true);
+    setLoading(true);
     try {
       const res = isRegister
         ? await registerAction({ name: name.trim(), email, studentId, password })
@@ -75,6 +76,27 @@ export function LoginPage({ onLogin }: LoginPageProps) {
 
       if (!res.ok) return setError(res.error);
       onLogin(res.user);
+    } catch {
+      setError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleForgot() {
+    setError("");
+    setInfo("");
+
+    const id = identifier.trim();
+    const valid = EMAIL_RE.test(id) || STUDENT_ID_RE.test(id);
+    if (!valid)
+      return setError("กรอกอีเมลหรือรหัสนักศึกษาในช่องด้านบนก่อน แล้วกด ลืมรหัสผ่าน");
+
+    setLoading(true);
+    try {
+      const res = await forgotPasswordAction(id);
+      if (!res.ok) return setError(res.error ?? "เกิดข้อผิดพลาด");
+      setInfo("ถ้าบัญชีนี้มีอยู่ในระบบ เราได้ส่งลิงก์รีเซ็ตรหัสผ่านไปที่อีเมลแล้ว");
     } catch {
       setError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
     } finally {
@@ -207,8 +229,6 @@ export function LoginPage({ onLogin }: LoginPageProps) {
                       className={inputClass}
                       style={{ borderColor: C.border, color: C.green }}
                     />
-                    
-                    
                   </div>
                 </>
               ) : (
@@ -268,7 +288,13 @@ export function LoginPage({ onLogin }: LoginPageProps) {
                     />
                     จดจำฉันไว้
                   </label>
-                  <button type="button" className="font-medium hover:underline" style={{ color: C.navy }}>
+                  <button
+                    type="button"
+                    onClick={handleForgot}
+                    disabled={loading}
+                    className="font-medium hover:underline disabled:opacity-60"
+                    style={{ color: C.navy }}
+                  >
                     ลืมรหัสผ่าน?
                   </button>
                 </div>
@@ -282,6 +308,16 @@ export function LoginPage({ onLogin }: LoginPageProps) {
                 style={{ background: "#FDF1EC", borderColor: "#E9C3B0", color: "#9A3B1C" }}
               >
                 {error}
+              </p>
+            )}
+
+            {info && (
+              <p
+                role="status"
+                className="mt-4 rounded-lg border px-3 py-2 text-sm"
+                style={{ background: "#EEF5EC", borderColor: "#B9D2B3", color: C.green }}
+              >
+                {info}
               </p>
             )}
 
