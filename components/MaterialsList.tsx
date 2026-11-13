@@ -95,13 +95,7 @@ export function MaterialsList({
       setDeletingId(null);
     }
   }
-useEffect(() => {
-  supabase.auth.getSession().then(({ data, error }) => {
-    console.log("session:", data.session, "error:", error);
-  });
-}, []);
 
-console.log("userId:", userId, "uploaded_by:", materials.map((m) => m.uploaded_by));
   return (
     <main className="flex h-full flex-1 flex-col p-8">
       <button

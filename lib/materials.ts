@@ -90,7 +90,6 @@ export async function uploadMaterial(
 }
 
 export async function deleteMaterial(material: { id: string; file_path: string }) {
-  // ลบแถวใน DB ก่อน ถ้าไม่ใช่เจ้าของ RLS จะบล็อกแล้วไฟล์ใน Storage จะไม่ถูกแตะ
   const { data, error: dbError } = await supabase
     .from("materials")
     .delete()
@@ -99,7 +98,6 @@ export async function deleteMaterial(material: { id: string; file_path: string }
   if (dbError) throw new Error(dbError.message);
   if (!data || data.length === 0) throw new Error("คุณไม่มีสิทธิ์ลบไฟล์นี้");
 
-  // แล้วค่อยลบไฟล์ใน Storage
   const { error: storageError } = await supabase.storage
     .from(MATERIALS_BUCKET)
     .remove([material.file_path]);
