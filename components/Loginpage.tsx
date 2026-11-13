@@ -125,8 +125,8 @@ export function LoginPage({ onLogin }: LoginPageProps) {
             </svg>
           </div>
           <div className="leading-tight">
-            <p className="font-bold text-lg">Summary</p>
-            <p className="text-sm text-white/70">with pine</p>
+            <p className="font-bold text-2xl">Summary</p>
+            <p className="text-base text-white/70">with pine</p>
           </div>
         </div>
 
