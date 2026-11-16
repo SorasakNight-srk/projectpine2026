@@ -8,8 +8,8 @@ import { CATEGORY_LABEL } from "@/lib/types";
 const CATEGORY_KEYS: Category[] = ["sheet", "exam"];
 
 const CATEGORY_IMAGE: Record<Category, string> = {
-  sheet: "/images/1.png",
-  exam: "/images/Exam.png",
+  sheet: "/1.png",
+  exam: "/Exam.png",
 };
 
 export function CourseDetail({
