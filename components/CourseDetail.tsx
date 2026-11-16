@@ -1,10 +1,16 @@
 "use client";
 
+import Image from "next/image";
 import { ChevronLeft } from "lucide-react";
 import type { Category, Course } from "@/lib/types";
 import { CATEGORY_LABEL } from "@/lib/types";
 
 const CATEGORY_KEYS: Category[] = ["sheet", "exam"];
+
+const CATEGORY_IMAGE: Record<Category, string> = {
+  sheet: "/images/1.png",
+  exam: "/images/Exam.png",
+};
 
 export function CourseDetail({
   course,
@@ -40,10 +46,18 @@ export function CourseDetail({
           <button
             key={key}
             onClick={() => onSelectCategory(key)}
-            className="flex h-75 w-100 flex-col rounded-xl border bg-white text-left transition-transform hover:-translate-y-1"
+            className="flex h-75 w-100 flex-col overflow-hidden rounded-xl border bg-white text-left transition-transform hover:-translate-y-1"
             style={{ borderColor: "#E4DEC7" }}
           >
-            <div className="flex flex-1 items-center justify-center" />
+            <div className="relative flex-1">
+              <Image
+                src={CATEGORY_IMAGE[key]}
+                alt={CATEGORY_LABEL[key]}
+                fill
+                className="object-cover"
+                sizes="400px"
+              />
+            </div>
             <div
               className="border-t px-4 py-3 text-center text-base font-semibold"
               style={{ borderColor: "#EFEAD8", color: "#1F3D2B" }}
